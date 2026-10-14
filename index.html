@@ -1,305 +1,141 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Teselación con dominós</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&display=swap" rel="stylesheet">
+<title>Esfera → Elipsoide</title>
 <style>
-:root{
-  --bg:#171b21; --panel:#1f242c; --panel-2:#262c35; --ink:#eef0e8; --muted:#98a1ab;
-  --light-sq:#e9e2cf; --dark-sq:#3c5960; --removed:#5a3436; --removed-2:#7a4547;
-  --domino:#e8b64a; --domino-ink:#20242b; --accent:#5fa8a0; --accent-ink:#0c1113;
-  --danger:#c1554f; --border:#333a44;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
-}
-:root:not([data-theme="light"]){}
-@media (prefers-color-scheme: light){
-  :root:not([data-theme="dark"]){
-    --bg:#f3efe4; --panel:#ffffff; --panel-2:#f1ede2; --ink:#1d2026; --muted:#6b7280;
-    --light-sq:#f2ecdc; --dark-sq:#3c5960; --removed:#e7c9c8; --removed-2:#d9a9a7;
-    --border:#e0dccf;
-  }
-}
-:root[data-theme="light"]{
-  --bg:#f3efe4; --panel:#ffffff; --panel-2:#f1ede2; --ink:#1d2026; --muted:#6b7280;
-  --light-sq:#f2ecdc; --dark-sq:#3c5960; --removed:#e7c9c8; --removed-2:#d9a9a7; --border:#e0dccf;
-}
-*{box-sizing:border-box;}
-html,body{height:100%;}
-body{
-  margin:0; background:var(--bg); color:var(--ink);
-  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  padding:24px 16px 40px;
-}
-h1{
-  font-family:'Fraunces',serif; font-weight:600; font-size:clamp(24px,4vw,34px);
-  margin:0 0 6px; letter-spacing:-0.01em;
-}
-.sub{color:var(--muted); max-width:640px; line-height:1.5; margin:0 0 22px; font-size:15px;}
-.wrap{max-width:920px; margin:0 auto;}
-.panel{
-  background:var(--panel); border:1px solid var(--border); border-radius:14px;
-  padding:18px 18px 20px;
-}
-.controls{
-  display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:18px;
-}
-select, button{
-  font:inherit; border-radius:9px; border:1px solid var(--border);
-  background:var(--panel-2); color:var(--ink); padding:8px 12px; cursor:pointer;
-}
-button.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600;}
-button.ghost:hover{filter:brightness(1.08);}
-select{
-  appearance:none; -webkit-appearance:none;
-  background-image:linear-gradient(135deg,var(--accent) 0%,var(--accent) 100%);
-  background-color:var(--panel-2);
-  background-repeat:no-repeat, no-repeat;
-  background-image:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0 L5 6 L10 0 Z' fill='%235fa8a0'/></svg>");
-  background-position:right 14px center;
-  background-size:10px 6px;
-  padding:10px 34px 10px 14px;
-  border:1.5px solid var(--border);
-  font-weight:600;
-  min-width:230px;
-  transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease;
-}
-select:hover{border-color:var(--accent);}
-select:focus{
-  outline:none; border-color:var(--accent);
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
-}
-select:active{transform:translateY(1px);}
-select option{background:var(--panel); color:var(--ink); padding:8px;}
-.stats{margin-left:auto; display:flex; gap:16px; font-size:13px; color:var(--muted);}
-.stats b{color:var(--ink); font-weight:600;}
-.stage{display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;}
-#board{
-  --n:6;
-  display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(6,1fr);
-  width:min(480px,90vw); aspect-ratio:1; border-radius:8px; overflow:hidden;
-  border:3px solid var(--panel-2); flex:0 0 auto;
-}
-.cell{position:relative;}
-.cell.light{background:var(--light-sq);}
-.cell.dark{background:var(--dark-sq);}
-.cell.removed{
-  background:repeating-linear-gradient(135deg,var(--removed),var(--removed) 6px,var(--removed-2) 6px,var(--removed-2) 12px);
-  cursor:pointer;
-}
-.cell.custom-mode{cursor:pointer;}
-.cell.custom-mode:hover{outline:2px solid var(--accent); outline-offset:-2px;}
-.domino{
-  position:relative; z-index:2;
-  background:var(--domino); border-radius:7px; margin:3px;
-  display:flex; align-items:center; justify-content:center; gap:6px;
-  box-shadow:0 2px 6px rgba(0,0,0,.35); cursor:grab;
-}
-.domino:active{cursor:grabbing;}
-.domino .dot{width:9px; height:9px; border-radius:50%; background:var(--domino-ink); opacity:.55;}
-.domino .rm{
-  position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%;
-  background:rgba(0,0,0,.35); color:#fff; font-size:11px; line-height:16px; text-align:center;
-  border:none; padding:0; cursor:pointer;
-}
-.tray{
-  flex:1 1 220px; min-width:220px; display:flex; flex-direction:column; gap:14px;
-}
-.tray h3{margin:0; font-size:14px; text-transform:none; color:var(--muted); font-weight:600;}
-.tray-piece{
-  width:120px; height:56px; background:var(--domino); border-radius:8px;
-  display:flex; align-items:center; justify-content:center; gap:8px;
-  cursor:grab; box-shadow:0 2px 6px rgba(0,0,0,.3); transition:transform .15s ease;
-}
-.tray-piece.vertical{width:56px; height:120px; flex-direction:column;}
-.tray-piece .dot{width:10px;height:10px;border-radius:50%;background:var(--domino-ink); opacity:.55;}
-.legend{font-size:13px; color:var(--muted); line-height:1.6;}
-.legend b{color:var(--ink);}
-.hint{
-  font-size:13px; color:var(--muted); background:var(--panel-2); border-radius:9px;
-  padding:10px 12px; line-height:1.5;
-}
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2230;--mute:#667085;--line:#d8dce3;--surf:37,99,235;--ref:#9aa3b2;
+--y:#d99a00;--g:#16a34a;--o:#ea580c;--white:#1c2230;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1115;--card:#171a21;--ink:#e8eaf0;--mute:#98a2b3;--line:#2a2f3a;--surf:96,165,250;--ref:#7b8494;--y:#facc15;--g:#4ade80;--o:#fb923c;--white:#fff}}
+:root[data-theme="dark"]{--bg:#0f1115;--card:#171a21;--ink:#e8eaf0;--mute:#98a2b3;--line:#2a2f3a;--surf:96,165,250;--ref:#7b8494;--y:#facc15;--g:#4ade80;--o:#fb923c;--white:#fff}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+#c3{width:100%;aspect-ratio:1/1;display:block;touch-action:none;cursor:grab}
+.side{display:grid;grid-template-rows:repeat(3,1fr);gap:12px}
+.side .card{display:flex;flex-direction:column}
+.side canvas{width:100%;aspect-ratio:1/1;display:block;max-height:100%}
+.t{font-size:13px;font-weight:600;margin-bottom:2px}
+.ctrl{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 24px}
+.ctrl label{display:flex;justify-content:space-between;font-size:13px;color:var(--mute)}
+.ctrl b{color:var(--ink);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;margin:4px 0 0}
+.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+button{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer}
+.f{font-size:13px;color:var(--mute);margin-left:auto}
+.f span{margin-left:12px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.side{grid-template-rows:none;grid-template-columns:repeat(3,1fr)}.side .card{padding:6px}.t{font-size:11px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Teselación del tablero con dominós</h1>
-  <p class="sub">Arrastra fichas de dominó al tablero para cubrirlo por completo.</p>
-
-  <div class="panel">
-    <div class="controls">
-      <select id="preset">
-        <option value="full">Tablero completo (6×6)</option>
-        <option value="same">Mutilado: dos esquinas del mismo color</option>
-        <option value="diff">Mutilado: dos casillas de distinto color</option>
-        <option value="custom">Personalizado (elige tú las casillas)</option>
-      </select>
-      <button class="ghost" id="rotateBtn">⟳ Girar ficha de la bandeja</button>
-      <button class="ghost" id="resetBtn">Quitar todas las fichas</button>
-      <div class="stats">
-        <span>Casillas activas: <b id="statActive">64</b></span>
-        <span>Cubiertas: <b id="statCovered">0</b></span>
-        <span>Fichas: <b id="statPieces">0</b></span>
-      </div>
-    </div>
-
-    <div class="stage">
-      <div id="board"></div>
-      <div class="tray">
-        <h3>Bandeja de fichas</h3>
-        <div class="tray-piece" id="trayPiece" draggable="true">
-          <span class="dot"></span><span class="dot"></span>
-        </div>
-        <div class="hint" id="customHint" style="display:none;">
-          Modo personalizado: haz clic en cualquier casilla vacía para quitarla del tablero, o en una casilla quitada para restaurarla.
-        </div>
-        <div class="legend">
-          <p><b>Cómo usarla:</b> arrastra la ficha de la bandeja hasta el tablero. Haz clic en la ✕ de una ficha colocada para quitarla, o usa el botón ⟳ para cambiar su orientación antes de soltarla.</p>
-        </div>
-      </div>
-    </div>
+<h1>Esfera → Elipsoide</h1>
+<div class="grid">
+  <div class="card"><canvas id="c3"></canvas></div>
+  <div class="side">
+    <div class="card"><div class="t" style="color:var(--y)">Traza xy (z = 0)</div><canvas id="p0"></canvas></div>
+    <div class="card"><div class="t" style="color:var(--g)">Traza xz (y = 0)</div><canvas id="p1"></canvas></div>
+    <div class="card"><div class="t" style="color:var(--o)">Traza yz (x = 0)</div><canvas id="p2"></canvas></div>
   </div>
 </div>
-
+<div class="ctrl">
+  <div><label>Transformación <b id="vk">0 %</b></label><input id="k" type="range" min="0" max="100" value="0"></div>
+  <div><label>b (semieje y) <b id="vb">1.20</b></label><input id="b" type="range" min="0.2" max="3" step="0.05" value="1.2"></div>
+  <div><label>c (semieje z) <b id="vc">0.80</b></label><input id="c" type="range" min="0.2" max="3" step="0.05" value="0.8"></div>
+  <div><label>Rotación <b id="va">-50°</b></label><input id="a" type="range" min="-180" max="180" value="-50"></div>
+  <div><label>Elevación <b id="ve">25°</b></label><input id="e" type="range" min="-90" max="90" value="25"></div>
+  <div><label>Posición x de los semiejes <b id="vx">1.20</b></label><input id="x" type="range" min="-2" max="2" step="0.01" value="1.2"></div>
+</div>
+<div class="row">
+  <button id="play">▶ Animar</button><button id="reset">Restablecer</button>
+  <div class="f"><span style="color:var(--y)">y′ = (b/r)·√(r²−x²)</span><span style="color:var(--g)">z′ = (c/r)·√(r²−x²)</span></div>
+</div>
+</div>
 <script>
-const N = 6;
-let removedSet = new Set(); // "r,c"
-let dominoes = []; // {id,row,col,orient} orient 'h' | 'v', anchor top-left
-let trayOrient = 'h';
-let nextId = 1;
-let preset = 'full';
-
-const boardEl = document.getElementById('board');
-const trayPiece = document.getElementById('trayPiece');
-const customHint = document.getElementById('customHint');
-
-function key(r,c){ return r+','+c; }
-function isRemoved(r,c){ return removedSet.has(key(r,c)); }
-function occupiedBy(r,c, excludeId){
-  return dominoes.find(d=>{
-    if(d.id===excludeId) return false;
-    const cells = d.orient==='h' ? [[d.row,d.col],[d.row,d.col+1]] : [[d.row,d.col],[d.row+1,d.col]];
-    return cells.some(([rr,cc])=>rr===r&&cc===c);
-  });
+const R=2,$=id=>document.getElementById(id);
+const S={k:0,b:1.2,c:0.8,a:-50,e:25,x:1.2};
+const ids=["k","b","c","a","e","x"],fmt={x:v=>(+v).toFixed(2),k:v=>v+" %",b:v=>(+v).toFixed(2),c:v=>(+v).toFixed(2),a:v=>v+"°",e:v=>v+"°"};
+const cv=$("c3"),ctx=cv.getContext("2d"),pc=[0,1,2].map(i=>$("p"+i));
+let col={},pend=false;
+function readCols(){const s=getComputedStyle(document.documentElement);
+ for(const n of["ink","ref","y","g","o","white","surf"])col[n]=s.getPropertyValue("--"+n).trim();}
+function fit(c){const d=devicePixelRatio||1,w=c.clientWidth;if(!w)return;c.width=w*d;c.height=w*d;}
+function resize(){[cv,...pc].forEach(fit);readCols();draw();}
+function req(){if(!pend){pend=true;requestAnimationFrame(()=>{pend=false;draw();});}}
+function draw(){
+ const k=S.k/100,sy=1+(S.b/R-1)*k,sz=1+(S.c/R-1)*k;
+ const L=Math.max(R,S.b,S.c)*1.15;
+ // 3D
+ const W=cv.width,sc=W/2/L*0.92,cx=W/2,cy=W/2,A=S.a*Math.PI/180,E=S.e*Math.PI/180;
+ const cA=Math.cos(A),sA=Math.sin(A),cE=Math.cos(E),sE=Math.sin(E);
+ const P=(x,y,z)=>{const x1=x*cA-y*sA,y1=x*sA+y*cA;return[cx+sc*x1,cy-sc*(z*cE-y1*sE),y1*cE+z*sE];};
+ ctx.clearRect(0,0,W,W);ctx.lineCap="round";
+ const lw=W/500;
+ const poly=(f,n,color,width,dash,alpha)=>{
+  ctx.strokeStyle=color;ctx.lineWidth=width*lw;ctx.setLineDash(dash?[6*lw,5*lw]:[]);ctx.globalAlpha=alpha||1;
+  ctx.beginPath();for(let i=0;i<=n;i++){const p=f(i/n*2*Math.PI),q=P(p[0],p[1],p[2]);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);}
+  ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;};
+ // malla de la superficie con atenuacion por profundidad
+ ctx.lineWidth=0.8*lw;
+ const seg=(f,n)=>{let p0=f(0),q0=P(...p0);for(let i=1;i<=n;i++){const p1=f(i/n),q1=P(...p1);
+   const d=(q0[2]+q1[2])/2/(R*1.5);ctx.globalAlpha=Math.max(0.05,Math.min(0.5,0.28-d*0.2));
+   ctx.strokeStyle="rgb("+col.surf+")";ctx.beginPath();ctx.moveTo(q0[0],q0[1]);ctx.lineTo(q1[0],q1[1]);ctx.stroke();q0=q1;}};
+ const X=(u,v)=>[R*Math.sin(v)*Math.cos(u),sy*R*Math.sin(v)*Math.sin(u),sz*R*Math.cos(v)];
+ for(let i=0;i<24;i++){const u=i/24*2*Math.PI;seg(t=>X(u,t*Math.PI),32);}
+ for(let j=1;j<12;j++){const v=j/12*Math.PI;seg(t=>X(t*2*Math.PI,v),48);}
+ ctx.globalAlpha=1;
+ // circunferencias originales
+ poly(t=>[R*Math.cos(t),R*Math.sin(t),0],96,col.ref,1.2,1,0.8);
+ poly(t=>[R*Math.cos(t),0,R*Math.sin(t)],96,col.ref,1.2,1,0.8);
+ poly(t=>[0,R*Math.cos(t),R*Math.sin(t)],96,col.ref,1.2,1,0.8);
+ // trazas
+ poly(t=>[R*Math.cos(t),sy*R*Math.sin(t),0],96,col.y,3);
+ poly(t=>[R*Math.cos(t),0,sz*R*Math.sin(t)],96,col.g,3);
+ poly(t=>[0,sy*R*Math.cos(t),sz*R*Math.sin(t)],96,col.o,3);
+ // alturas en x0
+ const x0=S.x,h=Math.sqrt(Math.max(0,R*R-x0*x0));
+ const ln=(a,b,color,w)=>{const p=P(...a),q=P(...b);ctx.strokeStyle=color;ctx.lineWidth=w*lw;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();};
+ ln([x0,0,0],[x0,h,0],col.white,2);ln([x0,0,0],[x0,0,h],col.white,2);
+ ln([x0,0,0],[x0,sy*h,0],col.y,4.5);ln([x0,0,0],[x0,0,sz*h],col.g,4.5);
+ // paneles 2D
+ const spec=[[col.y,1,sy],[col.g,1,sz],[col.o,sy,sz]];
+ pc.forEach((c,i)=>{const g=c.getContext("2d"),w=c.width,s=w/2/L*0.92,l=w/500;
+  g.clearRect(0,0,w,w);
+  g.strokeStyle=col.ref;g.lineWidth=1.2*l*1.4;g.setLineDash([6*l*1.4,5*l*1.4]);
+  g.beginPath();g.arc(w/2,w/2,R*s,0,7);g.stroke();g.setLineDash([]);
+  g.strokeStyle=spec[i][0];g.lineWidth=3*l*1.4;g.beginPath();
+  g.ellipse(w/2,w/2,R*spec[i][1]*s,R*spec[i][2]*s,0,0,2*Math.PI);g.stroke();});
 }
-function canPlace(r,c,orient,excludeId){
-  const cells = orient==='h' ? [[r,c],[r,c+1]] : [[r,c],[r+1,c]];
-  return cells.every(([rr,cc])=> rr>=0&&rr<N&&cc>=0&&cc<N && !isRemoved(rr,cc) && !occupiedBy(rr,cc,excludeId));
-}
-
-function applyPreset(p){
-  preset = p;
-  removedSet = new Set();
-  dominoes = [];
-  if(p==='same'){ removedSet.add(key(0,0)); removedSet.add(key(N-1,N-1)); }
-  if(p==='diff'){ removedSet.add(key(0,0)); removedSet.add(key(N-1,N-2)); }
-  customHint.style.display = p==='custom' ? 'block' : 'none';
-  render();
-}
-
-function render(){
-  boardEl.innerHTML = '';
-  for(let r=0;r<N;r++){
-    for(let c=0;c<N;c++){
-      const cell = document.createElement('div');
-      const light = (r+c)%2===0;
-      cell.className = 'cell ' + (isRemoved(r,c) ? 'removed' : (light?'light':'dark')) + (preset==='custom'?' custom-mode':'');
-      cell.style.gridColumn = (c+1);
-      cell.style.gridRow = (r+1);
-      cell.dataset.r = r; cell.dataset.c = c;
-      if(preset==='custom'){
-        cell.addEventListener('click', ()=>{
-          if(occupiedBy(r,c)) return;
-          const k = key(r,c);
-          removedSet.has(k) ? removedSet.delete(k) : removedSet.add(k);
-          render();
-        });
-      }
-      boardEl.appendChild(cell);
-    }
-  }
-  dominoes.forEach(d=>{
-    const el = document.createElement('div');
-    el.className = 'domino';
-    el.draggable = true;
-    el.dataset.id = d.id;
-    if(d.orient==='h'){
-      el.style.gridColumn = (d.col+1)+' / span 2'; el.style.gridRow = (d.row+1);
-    } else {
-      el.style.gridColumn = (d.col+1); el.style.gridRow = (d.row+1)+' / span 2';
-      el.style.flexDirection = 'column';
-    }
-    el.innerHTML = '<span class="dot"></span><span class="dot"></span><button class="rm" title="Quitar ficha">✕</button>';
-    el.querySelector('.rm').addEventListener('click', (e)=>{
-      e.stopPropagation();
-      dominoes = dominoes.filter(x=>x.id!==d.id);
-      render();
-    });
-    el.addEventListener('dragstart', (e)=>{
-      e.dataTransfer.setData('text/plain','move:'+d.id);
-    });
-    boardEl.appendChild(el);
-  });
-  updateStats();
-}
-
-function updateStats(){
-  const active = N*N - removedSet.size;
-  const covered = dominoes.length*2;
-  document.getElementById('statActive').textContent = active;
-  document.getElementById('statCovered').textContent = covered;
-  document.getElementById('statPieces').textContent = dominoes.length;
-}
-
-function cellFromEvent(e){
-  const rect = boardEl.getBoundingClientRect();
-  const c = Math.floor((e.clientX-rect.left)/rect.width*N);
-  const r = Math.floor((e.clientY-rect.top)/rect.height*N);
-  return {r: Math.min(Math.max(r,0),N-1), c: Math.min(Math.max(c,0),N-1)};
-}
-
-trayPiece.addEventListener('dragstart', (e)=>{
-  e.dataTransfer.setData('text/plain','new');
-});
-
-document.getElementById('rotateBtn').addEventListener('click', ()=>{
-  trayOrient = trayOrient==='h' ? 'v' : 'h';
-  trayPiece.classList.toggle('vertical', trayOrient==='v');
-});
-
-document.getElementById('resetBtn').addEventListener('click', ()=>{
-  dominoes = [];
-  render();
-});
-
-document.getElementById('preset').addEventListener('change', (e)=> applyPreset(e.target.value));
-
-boardEl.addEventListener('dragover', (e)=> e.preventDefault());
-boardEl.addEventListener('drop', (e)=>{
-  e.preventDefault();
-  const data = e.dataTransfer.getData('text/plain');
-  const {r,c} = cellFromEvent(e);
-  if(data==='new'){
-    if(canPlace(r,c,trayOrient)){
-      dominoes.push({id:nextId++, row:r, col:c, orient:trayOrient});
-      render();
-    }
-  } else if(data.startsWith('move:')){
-    const id = Number(data.split(':')[1]);
-    const d = dominoes.find(x=>x.id===id);
-    if(d && canPlace(r,c,d.orient,id)){
-      d.row = r; d.col = c;
-      render();
-    }
-  }
-});
-
-applyPreset('full');
+// controles en vivo
+ids.forEach(id=>{const el=$(id);el.addEventListener("input",()=>{S[id]=+el.value;$("v"+id).textContent=fmt[id](el.value);req();});});
+function setS(id,v){S[id]=v;$(id).value=v;$("v"+id).textContent=fmt[id](v);}
+// arrastrar para rotar
+let drag=null;
+cv.addEventListener("pointerdown",e=>{drag=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId);cv.style.cursor="grabbing";});
+cv.addEventListener("pointermove",e=>{if(!drag)return;
+ const dx=e.clientX-drag[0],dy=e.clientY-drag[1];drag=[e.clientX,e.clientY];
+ let a=S.a+dx*0.5;a=((a+180)%360+360)%360-180;
+ setS("a",Math.round(a));setS("e",Math.round(Math.max(-90,Math.min(90,S.e+dy*0.5))));req();});
+cv.addEventListener("pointerup",()=>{drag=null;cv.style.cursor="grab";});
+// animar
+let anim=null,t0=0;
+$("play").onclick=()=>{
+ if(anim){cancelAnimationFrame(anim);anim=null;$("play").textContent="▶ Animar";return;}
+ $("play").textContent="⏸ Pausar";t0=performance.now();
+ const step=now=>{const ph=((now-t0)/6000)%1,k=ph<0.5?ph*2:2-ph*2,e=k*k*(3-2*k);
+  setS("k",Math.round(e*100));draw();anim=requestAnimationFrame(step);};
+ anim=requestAnimationFrame(step);};
+$("reset").onclick=()=>{if(anim){cancelAnimationFrame(anim);anim=null;$("play").textContent="▶ Animar";}
+ setS("k",0);setS("b",1.2);setS("c",0.8);setS("a",-50);setS("e",25);setS("x",1.2);draw();};
+addEventListener("resize",resize);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{readCols();draw();});
+resize();
 </script>
 </body>
 </html>
